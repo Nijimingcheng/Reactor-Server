@@ -1,5 +1,9 @@
 #include "INETAddress.h"
 
+INETAddress::INETAddress()
+{
+
+}
 INETAddress::INETAddress(const std::string &ip, uint16_t port)
 {
     addr_.sin_family = AF_INET;                         // IPv4网络协议的套接字类型。
@@ -31,4 +35,10 @@ const sockaddr *INETAddress::addr() const
 {
     return (sockaddr *)&addr_;
 }
+
+void INETAddress::setaddr(sockaddr_in clientaddr)
+{
+    addr_ = clientaddr;
+}
+
 
