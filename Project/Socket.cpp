@@ -1,24 +1,5 @@
 #include "Socket.h"
 
-
-// class Socket
-// {
-// private:
-//     const int fd_;      //Socket持有的fd，在构造函数中传进来。
-// public:
-//     Socket(int fd);     //构造函数，传入一个已经准备好的fd。
-//     ~Socket();          //在析构函数中，将关闭fd_。
-
-//     int fd() const;     //返回fd_成员
-//     void setreuseaddr(bool on);    //设置SO_REUSERADDR选项，true-打开，false-关闭
-//     void setreuseport(bool on);    //设置SO_REUSEPORT选项，true-打开，false-关闭
-//     void settcpnodelay(bool on);   //设置SO_NODELAY选项，true-打开，false-关闭
-//     void setkeepalive(bool on);    //设置SO_KEEPALIVE选项，true-打开，false-关闭
-//     void bind(INETAddress& servaddr);   //服务端的socket将调用此函数
-//     void listen(int Waitqueue = 128);   //服务端的socket将调用此函数
-//     void accpet(INETAddress& clientaddr);   //服务端的socket将调用此函数
-// };
-
 //创建一个非阻塞的SOCKET
 int createnonblocking()
 {
@@ -30,17 +11,17 @@ int createnonblocking()
     }
     return listenfd;
 }
-
+//构造函数
 Socket::Socket(int fd):fd_(fd)
 {
 
 }
-
+//析构函数
 Socket::~Socket()
 {
     ::close(fd_);
 }
-
+//返回socket值
 int Socket::fd() const
 {
     return fd_;
@@ -69,7 +50,7 @@ void Socket::settcpnodelay(bool on)
     int optval = on ? 1 : 0;
     ::setsockopt(fd_, IPPROTO_TCP, TCP_NODELAY, &optval, sizeof(optval));  
 }
-
+//用于服务端的绑定
 void Socket::bind(INETAddress& servaddr)
 {
     if (::bind(fd_, servaddr.addr(),sizeof(sockaddr)) < 0 )
@@ -77,7 +58,7 @@ void Socket::bind(INETAddress& servaddr)
         perror("bind() failed"); close(fd_); exit(-1);
     }
 }
-
+//用于服务端的监听
 void Socket::listen(int Waitqueue)
 {
     if (::listen(fd_, Waitqueue) != 0 )
@@ -85,7 +66,7 @@ void Socket::listen(int Waitqueue)
         perror("listen() failed"); close(fd_); exit(-1);
     }
 }
-
+//用于服务端创建通信的socket(关键，多看一下)
 int Socket::accept(INETAddress& clientaddr)
 {
     // 如果是listenfd有事件，表示有新的客户端连上来。
@@ -93,9 +74,10 @@ int Socket::accept(INETAddress& clientaddr)
     socklen_t len = sizeof(peeraddr);
     //accept4()函数共有4个参数，相比accept()多了一个flags的参数，用户可以通过此参数直接设置套接字的一些属性，如SOCK_NONBLOCK或者是SOCK_CLOEXEC。
     int clientfd = ::accept4(fd_, (sockaddr*)&peeraddr, &len, SOCK_NONBLOCK);
-  
+
     clientaddr.setaddr(peeraddr);
 
     return clientfd;
 }
+
 
