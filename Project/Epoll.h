@@ -13,6 +13,9 @@
 #include <sys/fcntl.h>
 #include <sys/epoll.h>
 #include <netinet/tcp.h>  
+#include "Channel.h"
+
+class Channel;
 
 //Epoll类
 class Epoll
@@ -25,9 +28,9 @@ public:
     Epoll();
     ~Epoll();
 
-    void addfd(int fd, uint32_t op);    //把fd和它需要监视的事件添加到红黑树上。
-    std::vector<epoll_event> loop(int timeout = -1);    //运行epoll_wait(), 等待事件的发生, 已发送的事件用vector容器返回
+    //void addfd(int fd, uint32_t op);    //把fd和它需要监视的事件添加到红黑树上。
+    void updatechannel(Channel *ch);      // 把channel添加/更新到红黑树上，channel中有fd，也有需要监视的事件。
+    std::vector<Channel *> loop(int timeout = -1);    //运行epoll_wait(), 等待事件的发生, 已发送的事件用vector容器返回
 };
 
 #endif
-

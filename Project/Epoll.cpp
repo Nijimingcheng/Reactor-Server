@@ -15,22 +15,47 @@ Epoll::~Epoll()
     ::close(epollfd_);
 }
 //把指定事件加入epoll的监视
-void Epoll::addfd(int fd, uint32_t op)
-{
-    epoll_event ev;                 // 声明事件的数据结构。
-    ev.data.fd = fd;                // 指定事件的自定义数据，会随着epoll_wait()返回的事件一并返回。
-    ev.events = op;                 // 让epoll监视listenfd的读事件，采用水平触发。
+// void Epoll::addfd(int fd, uint32_t op)
+// {
+//     epoll_event ev;                 // 声明事件的数据结构。
+//     ev.data.fd = fd;                // 指定事件的自定义数据，会随着epoll_wait()返回的事件一并返回。
+//     ev.events = op;                 // 让epoll监视listenfd的读事件，采用水平触发。
 
-    if (epoll_ctl(epollfd_, EPOLL_CTL_ADD, fd, &ev) == -1)     // 把需要监视的listenfd和它的事件加入epollfd中。
+//     if (epoll_ctl(epollfd_, EPOLL_CTL_ADD, fd, &ev) == -1)     // 把需要监视的listenfd和它的事件加入epollfd中。
+//     {
+//         printf("epoll_ctl() failed(%d).\n", errno);
+//         exit(-1);
+//     }
+// }
+// 把channel添加/更新到红黑树上，channel中有fd，也有需要监视的事件。
+void Epoll::updatechannel(Channel *ch)
+{
+    epoll_event ev;             //声明事件的数据结构
+    ev.data.ptr = ch;           //指定channel
+    ev.events = ch->events();   //指定事件
+
+    if (ch->inpoll())           //如果channel已经在树上了(就改变EPOLL_CTL_ADD成这个参数)
     {
-        printf("epoll_ctl() failed(%d).\n", errno);
-        exit(-1);
+        if (epoll_ctl(epollfd_, EPOLL_CTL_MOD, ch->fd(), &ev) == -1)
+        {
+            printf("epoll_ctl() failed(%d).\n", errno);
+            exit(-1);
+        }
+    }
+    else                        //如果不在channel树上(就把他加入到监听事件中)
+    {
+        if (epoll_ctl(epollfd_, EPOLL_CTL_ADD, ch->fd(), &ev) == -1)
+        {
+            printf("epoll_ctl() failed(%d).\n", errno);
+            exit(-1);
+        }
+        ch->setinepoll();       //把该channel事件inepoll参数设置为true(Channel是否已添加到epoll树上)
     }
 }
 //Epoll事件集池
-std::vector<epoll_event> Epoll::loop(int timeout)
+std::vector<Channel *> Epoll::loop(int timeout)
 {
-    std::vector<epoll_event> evs;   // 存放epoll_wait()返回事件的数组。
+    std::vector<Channel *> channels;   // 存放epoll_wait()返回事件的数组。
 
     memset(events_, 0, sizeof events_);
 
@@ -46,11 +71,16 @@ std::vector<epoll_event> Epoll::loop(int timeout)
     if (infds == 0)
     {
         printf("epoll_wait() timeout.\n");
-        return evs;
+        return channels;
     }
 
+    // 如果infds>0，表示有事件发生的fd的数量。
     for (int i = 0; i < infds; i ++)
-        evs.push_back(events_[i]);
-    
-    return evs;
+    {
+        Channel *ch = (Channel *)events_[i].data.ptr;                   //取出已经发生事件的channel。
+        ch->setrevents(events_[i].events);                              //设置channel的revents_成员
+        channels.push_back(ch);                                         //把取出的事件加入的事件组中
+    }
+
+    return channels;
 }
