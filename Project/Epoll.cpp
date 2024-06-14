@@ -14,19 +14,6 @@ Epoll::~Epoll()
 {
     ::close(epollfd_);
 }
-//把指定事件加入epoll的监视
-// void Epoll::addfd(int fd, uint32_t op)
-// {
-//     epoll_event ev;                 // 声明事件的数据结构。
-//     ev.data.fd = fd;                // 指定事件的自定义数据，会随着epoll_wait()返回的事件一并返回。
-//     ev.events = op;                 // 让epoll监视listenfd的读事件，采用水平触发。
-
-//     if (epoll_ctl(epollfd_, EPOLL_CTL_ADD, fd, &ev) == -1)     // 把需要监视的listenfd和它的事件加入epollfd中。
-//     {
-//         printf("epoll_ctl() failed(%d).\n", errno);
-//         exit(-1);
-//     }
-// }
 // 把channel添加/更新到红黑树上，channel中有fd，也有需要监视的事件。
 void Epoll::updatechannel(Channel *ch)
 {
@@ -73,7 +60,6 @@ std::vector<Channel *> Epoll::loop(int timeout)
         printf("epoll_wait() timeout.\n");
         return channels;
     }
-
     // 如果infds>0，表示有事件发生的fd的数量。
     for (int i = 0; i < infds; i ++)
     {

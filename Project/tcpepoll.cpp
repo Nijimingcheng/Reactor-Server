@@ -13,6 +13,7 @@
 #include "Socket.h"
 #include "Epoll.h"
 #include "Channel.h"
+#include "EventLoop.h"
 
 int main(int argc,char *argv[])
 {
@@ -32,18 +33,11 @@ int main(int argc,char *argv[])
     serversock.bind(servaddr);
     serversock.listen();
 
-    Epoll ep;
-    //这里new出来的对象没有释放, 这个问题以后再解决。
-    Channel *servchannel = new Channel(&ep, serversock.fd());       //把epoll红黑树和服务端的socket传入channel中
+    EventLoop Loop;                                                                                      //创建事件处理类
+    Channel *servchannel = new Channel(Loop.ep(), serversock.fd());                                      //把epoll红黑树和服务端的socket传入channel中
     servchannel->setreadcallback(std::bind(&Channel::newconnection, servchannel, &serversock));          //指定回调函数
-    servchannel->enablereading();                                         //让epoll_wait()监视servchannel的读事件
+    servchannel->enablereading();                                                                        //让epoll_wait()监视servchannel的读事件
 
-    while (true)    // 事件循环。
-    {
-        std::vector<Channel *> channels = ep.loop();    // 存放epoll_wait()返回事件, 等待监视的fd有事件发生。
-        // 遍历epoll返回的数组evs。查看发生的事件
-        for (auto &ch : channels)
-            ch->handleevent();
-    }
+    Loop.run();                                                                                          //事件集运行
     return 0;
 }
