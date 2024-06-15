@@ -1,14 +1,14 @@
 #include "Channel.h"
 
 //构造函数
-Channel::Channel(Epoll* ep, int fd):ep_(ep),fd_(fd)
+Channel::Channel(EventLoop* loop, int fd):loop_(loop),fd_(fd)
 {
 
 }
 //析构函数
 Channel::~Channel()
 {
-    // 在析构函数中，不要销毁ep_，也不能关闭fd_，因为这两个东西不属于Channel类，Channel类只是需要它们，使用它们而已。(关键信息看一眼)
+    // 在析构函数中，不要销毁loop_，也不能关闭fd_，因为这两个东西不属于Channel类，Channel类只是需要它们，使用它们而已。(关键信息看一眼)
 }
 //返回fd_成员
 int Channel::fd()
@@ -24,7 +24,7 @@ void Channel::useet()
 void Channel::enablereading()
 {
     events_ |= EPOLLIN;
-    ep_->updatechannel(this);
+    loop_->updatechannel(this);
 }
 //把inepoll_成员的值设置为true
 void Channel::setinepoll()
@@ -86,7 +86,7 @@ void Channel::newconnection(Socket* serversock)
     printf ("accept client(fd=%d,ip=%s,port=%d) ok.\n",clientsock->fd(), clientaddr.ip(), clientaddr.port()); //inet_ntoa函数是将二进制的网络ip转换成十分点进制的网络ip
 
     // 为新客户端连接准备读事件，并添加到epoll中。
-    Channel *clientchannel = new Channel(ep_, clientsock->fd());   // 这里new出来的对象没有释放，这个问题以后再解决。
+    Channel *clientchannel = new Channel(loop_, clientsock->fd());   // 这里new出来的对象没有释放，这个问题以后再解决。
     clientchannel->setreadcallback(std::bind(&Channel::onmessage, clientchannel));
     clientchannel->useet();                                       // 客户端连上来的fd采用边缘触发。
     clientchannel->enablereading();                               // 让epoll_wait()监视clientchannel的读事件。
