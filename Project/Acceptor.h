@@ -6,6 +6,7 @@
 #include "INETAddress.h"
 #include "Socket.h"
 #include "Channel.h"
+#include "Connection.h"
 
 class Acceptor
 {
@@ -16,6 +17,8 @@ private:
 public:
     Acceptor(EventLoop * loop, const std::string &ip, const uint16_t port);
     ~Acceptor();
+
+    void newconnection();           //在Accept类中处理客户端新连接请求
 };
 
 #endif

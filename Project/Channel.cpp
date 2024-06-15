@@ -1,5 +1,4 @@
 #include "Channel.h"
-#include "Connection.h"
 
 //构造函数
 Channel::Channel(EventLoop* loop, int fd):loop_(loop),fd_(fd)
@@ -75,18 +74,6 @@ void Channel::handleevent()
         printf("client(eventfd=%d) error.\n",fd_);
         close(fd_);            // 关闭客户端的fd。
     }
-}
-//处理新客户端连接请求
-void Channel::newconnection(Socket* serversock)
-{
-    INETAddress clientaddr;
-    //注意, clientsock只能new出来,不能在栈上, 否则析构函数会关闭fd。
-    //还有, 这里new出来的对象没有释放, 这个问题以后再解决
-    Socket *clientsock = new Socket(serversock->accept(clientaddr));
-
-    printf ("accept client(fd=%d,ip=%s,port=%d) ok.\n",clientsock->fd(), clientaddr.ip(), clientaddr.port()); //inet_ntoa函数是将二进制的网络ip转换成十分点进制的网络ip
-
-    Connection *connection = new Connection(loop_, clientsock);
 }
 //处理对端发过来的消息
 void Channel::onmessage()
