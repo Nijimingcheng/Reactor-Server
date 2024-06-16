@@ -28,8 +28,12 @@ void Acceptor::newconnection()
     //注意, clientsock只能new出来,不能在栈上, 否则析构函数会关闭fd。
     //还有, 这里new出来的对象没有释放, 这个问题以后再解决
     Socket *clientsock = new Socket(servsock_->accept(clientaddr));
+    printf("accept client(fd=%d,ip=%s,port=%d) ok.\n",clientsock->fd(), clientaddr.ip(), clientaddr.port()); //inet_ntoa函数是将二进制的网络ip转换成十分点进制的网络ip
 
-    printf ("accept client(fd=%d,ip=%s,port=%d) ok.\n",clientsock->fd(), clientaddr.ip(), clientaddr.port()); //inet_ntoa函数是将二进制的网络ip转换成十分点进制的网络ip
-
-    Connection *connection = new Connection(loop_, clientsock);
+    newconnectioncb_(clientsock);       // 回调TcpServer::newconnection()
+}
+//Acceptor的设置回调函数
+void Acceptor::setnewconnectioncb(std::function<void(Socket *)> rb)
+{
+    newconnectioncb_ = rb;
 }

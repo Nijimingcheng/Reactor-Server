@@ -5,6 +5,7 @@
 #include "Channel.h"
 #include "EventLoop.h"
 #include "Acceptor.h"
+#include "Connection.h"
 
 class TcpServer
 {
@@ -15,6 +16,7 @@ public:
     TcpServer(const std::string &ip, const uint16_t port);                      //构造函数，需要服务端的ip地址和端口号
     ~TcpServer();                                                               //析构函数
     void start();                                                               //运行事件循环
+    void newconnection(Socket *clientsock);                                     //在TcpServer类中处理客户端新连接请求
 };
 
 #endif

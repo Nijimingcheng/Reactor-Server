@@ -32,7 +32,6 @@ public:
     uint32_t events();                             //返回events_成员
     uint32_t revents();                            //返回revents_成员
     void handleevent();         //事件处理函数, epoll_wait()
-    void newconnection(Socket* serversock);        //处理新客户端连接请求
     void onmessage();                              //处理对端发过来的消息
     void setreadcallback(std::function<void()> rb);//设置fd_读事件的回调函数
 };
