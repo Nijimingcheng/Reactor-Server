@@ -57,8 +57,7 @@ void Channel::handleevent()
     //第一种：对方已关闭，有些系统检测不到，可以使用EPOLLIN，recv()返回0。
     if (revents_ & EPOLLRDHUP)
     {
-        printf("client(eventfd=%d) disconnected.)\n", fd_);
-        close(fd_);            // 关闭客户端的fd。
+        closecallback_();                //调用连接断开的回调函数, Connection类中实现(回调Connection)
     }
     //第二种：接收缓冲区中有数据可以读。
     else if (revents_ & (EPOLLIN|EPOLLPRI))
@@ -71,8 +70,7 @@ void Channel::handleevent()
     }
     else //第四种：其它事件，都视为错误。
     {
-        printf("client(eventfd=%d) error.\n",fd_);
-        close(fd_);            // 关闭客户端的fd。
+        errorcallback_();                //调用错误情况的回调函数, Connection类中实现(回调Connection)                      // 关闭客户端的fd。
     }
 }
 //处理对端发过来的消息
@@ -99,9 +97,8 @@ void Channel::onmessage()
         }
         else if (nread == 0)  // 客户端连接已断开。
         {
-            printf("client(eventfd=%d) disconnected.\n",fd_);
-            close(fd_);            // 关闭客户端的fd。
-            return;
+            closecallback_(); //调用连接断开的回调函数, Connection类中实现(回调Connection)
+            break;
         }
     }
 }
@@ -111,3 +108,12 @@ void Channel::setreadcallback(std::function<void()> rb)
     readcallback_ = rb;
 }
 
+void Channel::setclosecallback(std::function<void()> rb)
+{
+    closecallback_ = rb;
+}
+
+void Channel::seterrorcallback(std::function<void()> rb)
+{
+    errorcallback_ = rb;
+}

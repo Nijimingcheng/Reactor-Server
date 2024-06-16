@@ -1,6 +1,7 @@
 #ifndef __TCPSERVER_H__
 #define __TCPSERVER_H__
 
+#include <map>
 #include "Socket.h"
 #include "Channel.h"
 #include "EventLoop.h"
@@ -12,11 +13,14 @@ class TcpServer
 private:
     EventLoop loop_;                                                            //一个TcpServer可以有多个事件循环，现在是单线程，暂时只用一个事件循环
     Acceptor *acceptor_;                                                        //一个TcpServer只有一个Acceptor对象
+    std::map<int, Connection *> connect_;                                       // 一个TcpServer有多个Connection对象，存放在map容器中。
 public:
     TcpServer(const std::string &ip, const uint16_t port);                      //构造函数，需要服务端的ip地址和端口号
     ~TcpServer();                                                               //析构函数
     void start();                                                               //运行事件循环
     void newconnection(Socket *clientsock);                                     //在TcpServer类中处理客户端新连接请求
+    void closeconnection(Connection* connect);                                  // 关闭客户端的连接，在Connection类中回调此函数。 
+    void errorconnection(Connection *connect);                                  // 客户端的连接错误，在Connection类中回调此函数。
 };
 
 #endif

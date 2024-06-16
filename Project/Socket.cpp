@@ -26,6 +26,16 @@ int Socket::fd() const
 {
     return fd_;
 }
+//返回ip值
+std::string Socket::ip() const
+{
+    return ip_;
+}
+//返回port值
+uint16_t Socket::port() const
+{
+    return port_;
+}
 //socket选项设置
 void Socket::setreuseaddr(bool on)
 {
@@ -57,6 +67,8 @@ void Socket::bind(INETAddress& servaddr)
     {
         perror("bind() failed"); close(fd_); exit(-1);
     }
+    ip_ = servaddr.ip();
+    port_ = servaddr.port();
 }
 //用于服务端的监听
 void Socket::listen(int Waitqueue)
@@ -77,6 +89,8 @@ int Socket::accept(INETAddress& clientaddr)
 
     clientaddr.setaddr(peeraddr);
 
+    ip_ = clientaddr.ip();
+    port_ = clientaddr.port();
     return clientfd;
 }
 
