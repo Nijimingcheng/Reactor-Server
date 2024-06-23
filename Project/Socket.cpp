@@ -36,6 +36,12 @@ uint16_t Socket::port() const
 {
     return port_;
 }
+//设置ip_和port_成员
+void Socket::setipport(const std::string &ip, uint16_t port)   
+{
+    ip_ = ip;
+    port_ = port;
+}
 //socket选项设置
 void Socket::setreuseaddr(bool on)
 {
@@ -93,5 +99,3 @@ int Socket::accept(INETAddress& clientaddr)
     port_ = clientaddr.port();
     return clientfd;
 }
-
-
