@@ -1,6 +1,6 @@
 #include "EchoServer.h"
 
-EchoServer::EchoServer(const std::string &ip, const uint16_t port):tcpserver_(ip, port)
+EchoServer::EchoServer(const std::string &ip, const uint16_t port, int threadsz):tcpserver_(ip, port, threadsz)
 {
     tcpserver_.setnewconnectioncb(std::bind(&EchoServer::HandleNewConnection, this, std::placeholders::_1));
     tcpserver_.setcloseconnectioncb(std::bind(&EchoServer::HandleCloseConnection, this, std::placeholders::_1));
@@ -22,7 +22,8 @@ void EchoServer::Start()
 //处理新客户端连接请求，在TcpServer类中回调此函数
 void EchoServer::HandleNewConnection(Connection *connect)
 {
-    printf ("New connection(fd=%d,ip=%s,port=%d) ok.\n",connect->fd(),connect->ip().c_str(),connect->port());
+    printf("New connection(fd=%d,ip=%s,port=%d) ok.\n",connect->fd(),connect->ip().c_str(),connect->port());
+    printf("EchoServer::HandleNewConnection() is %ld.\n", syscall(SYS_gettid));
 
     //根据业务的需求，在这里可以增加其他的代码
 }
@@ -41,16 +42,13 @@ void EchoServer::HandleError(Connection *connect)
     //根据业务的需求，在这里可以增加其他的代码 
 }
 //处理客户端的请求报文，在TcpServer类中回调此函数
-void EchoServer::HandleMessage(Connection *connect, std::string message)
+void EchoServer::HandleMessage(Connection *connect, std::string &message)
 {
+    printf("EchoServer::HandleMessage() is %ld.\n", syscall(SYS_gettid));
     //在这里将进行若干次步骤运算
     message = "reply" + message;
 
-    int len = message.size();                                        //计算回应报文的大小。
-    std::string tmpbuf((char *)&len, 4);                             //把报文头部填充到回应报文中。
-    tmpbuf.append(message);                                          //把报文内容填充到回应报文中。
-
-    connect->send(tmpbuf.data(), tmpbuf.size());                     //把临时缓冲区中的数据直接send()出去。
+    connect->send(message.data(), message.size());                     //把临时缓冲区中的数据直接send()出去。
 }
 //数据发送完成后，在TcpServer类中回调此函数
 void EchoServer::HandleSendComplete(Connection *connect)

@@ -13,6 +13,12 @@ void Buffer::append(const char *data, size_t size)
 {
     buf_.append(data, size);
 }
+//把数据追加到buf_中，附带报文头部
+void Buffer::appendwithhead(const char *data, size_t size)
+{
+    buf_.append((char *)&size, 4);                                   //将报文头部信息加入到buf中
+    buf_.append(data, size);                                         //将报文body部分加入到buf中
+}
 //从buf_的pos开始,删除st个字节。
 void Buffer::erase(size_t pos, size_t st)
 {

@@ -4,10 +4,12 @@ int main(int argc,char *argv[])
 {
     if (argc != 3)
     {
-        printf("usage: ./tcpepoll ip port\n"); 
-        printf("example: ./tcpepoll 172.18.0.3 6006\n\n"); 
+        printf("usage: ./echoserver ip port\n");
+        printf("example: ./echoserver 172.18.0.3 6006\n\n");
         return -1;
     }
+
+    std::cout << "EchoServer Start\n";
 
     EchoServer echoserver(argv[1], atoi(argv[2]));
     //启动服务程序
