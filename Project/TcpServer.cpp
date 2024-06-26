@@ -6,6 +6,7 @@ TcpServer::TcpServer(const std::string &ip, const uint16_t port)
     acceptor_ = new Acceptor(&loop_, ip, port);
     //在创建Acceptor类中设置回调函数(需要传入一个参数, 故这里是展位符)
     acceptor_->setnewconnectioncb(std::bind(&TcpServer::newconnection, this, std::placeholders::_1));
+    loop_.setepolltimeoutcallback(std::bind(&TcpServer::epolltimeout, this, std::placeholders::_1));
 }
 //析构函数
 TcpServer::~TcpServer()
@@ -27,22 +28,70 @@ void TcpServer::newconnection(Socket *clientsock)
     Connection *connection = new Connection(&loop_, clientsock);
     connection->setclosecallback(std::bind(&TcpServer::closeconnection, this, std::placeholders::_1));
     connection->seterrorcallback(std::bind(&TcpServer::errorconnection, this, std::placeholders::_1));
-    
-    printf("new connection(fd=%d,ip=%s,port=%d) ok.\n",connection->fd(), connection->ip().c_str(), connection->port());          
+    connection->setonmessagecallback(std::bind(&TcpServer::onmessage, this, std::placeholders::_1, std::placeholders::_2));
+    connection->setsendcompletecallback(std::bind(&TcpServer::sendcomplete,this,std::placeholders::_1));
 
-    connect_[connection->fd()] = connection;            // 把conn存放map容器中。
+    connect_[connection->fd()] = connection;                               //把conn存放map容器中。
+    if(newconnectioncb_) newconnectioncb_(connection);                     //回调EchoServer::HandleNewConnection()。
 }
 // 关闭客户端的连接，在Connection类中回调此函数。 
 void TcpServer::closeconnection(Connection* connect)
 {
-    printf("client(eventfd=%d) disconnected.\n", connect->fd());
-    connect_.erase(connect->fd());                                  //当连接断开的时候需要把connect从map容器中删除
-    delete connect;                                                 //从map中删除connect
+    if(closeconnectioncb_) closeconnectioncb_(connect);                    //回调EchoServer::HandleClose()。
+
+    connect_.erase(connect->fd());                                         //当连接断开的时候需要把connect从map容器中删除
+    delete connect;                                                        //从map中删除connect
 }
 //客户端的连接错误，在Connection类中回调此函数。
 void TcpServer::errorconnection(Connection *connect)
 {
-    printf("client(eventfd=%d) error.\n",connect->fd());            //当出现错误连接而连接断开的时候需要把connect从map容器中删除
-    connect_.erase(connect->fd());                                  //从map中删除connect
+    if(errorconnectioncb_) errorconnectioncb_(connect);                    //回调EchoServer::HandleError()。
+
+    connect_.erase(connect->fd());                                         //从map中删除connect
     delete connect; 
+}
+// 处理客户端的请求报文，在Connection类中回调此函数，在这里对收到的报文进行处理
+void TcpServer::onmessage(Connection *connect, std::string message)
+{
+    if(onmessagecb_) onmessagecb_(connect, message);                       //回调EchoServer::HandleMessage()。
+}
+//数据发送完成后，在Connection类中回调此函数。
+void TcpServer::sendcomplete(Connection *connect)
+{
+    if(sendcompletecb_) sendcompletecb_(connect);                          //回调EchoServer::HandleSendComplete()。
+}
+//epoll_wait()超时，在EventLoop类中回调此函数。
+void TcpServer::epolltimeout(EventLoop *loop)
+{
+    if(timeoutcb_) timeoutcb_(loop);                                       //回调EchoServer::HandleTimeOut()。
+}
+
+void TcpServer::setnewconnectioncb(std::function<void(Connection*)> rb)
+{
+    newconnectioncb_ = rb;
+}
+
+void TcpServer::setcloseconnectioncb(std::function<void(Connection*)> rb)
+{
+    closeconnectioncb_ = rb;
+}
+
+void TcpServer::seterrorconnectioncb(std::function<void(Connection*)> rb)
+{
+    errorconnectioncb_ = rb;
+}
+
+void TcpServer::setonmessagecb(std::function<void(Connection*, std::string &message)> rb)
+{
+    onmessagecb_ = rb;
+}
+
+void TcpServer::setsendcompletecb(std::function<void(Connection*)> rb)
+{
+    sendcompletecb_ = rb;
+}
+
+void TcpServer::settimeoutcb(std::function<void(EventLoop*)> rb)
+{
+    timeoutcb_ = rb;
 }

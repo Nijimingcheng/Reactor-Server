@@ -13,6 +13,11 @@ void Buffer::append(const char *data, size_t size)
 {
     buf_.append(data, size);
 }
+//从buf_的pos开始,删除st个字节。
+void Buffer::erase(size_t pos, size_t st)
+{
+    buf_.erase(pos, st);
+}
 // 返回buf_的大小。
 size_t Buffer::size()
 {
@@ -27,4 +32,17 @@ const char *Buffer::data()
 void Buffer::clear()
 {
     buf_.clear();
+}
+//读取接收缓冲区
+bool Buffer::readstaticlen(std::string &message)
+{
+    int len;
+    memcpy(&len, buf_.data(), 4);
+
+    if (buf_.size() < len + 4) return false;
+
+    message.append(buf_.data() + 4, len);
+    
+    erase(0, len + 4);
+    return true;
 }
